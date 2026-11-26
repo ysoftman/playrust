@@ -1,0 +1,85 @@
+title = "소유권"
+summary = "소유권 3규칙, String 의 move, clone, Copy 타입, 스코프와 drop"
+concept = '''
+소유권(ownership)은 Rust 가 가비지 컬렉터 없이도 메모리를 안전하게 관리하는 방법입니다. 규칙은 세 가지입니다.
+- 모든 값에는 그 값을 소유하는 변수, 즉 소유자(owner)가 있습니다.
+- 소유자는 한 번에 하나뿐입니다.
+- 소유자가 스코프(자신이 선언된 중괄호 블록)를 벗어나면 값은 자동으로 정리(drop)됩니다.
+
+`String::from("hello")` 로 만든 `String` 은 길이가 바뀔 수 있는 문자열이라 데이터를 힙(heap)에 저장합니다. `push_str` 로 뒤에 문자열을 덧붙일 수도 있습니다.
+
+`let s2 = s1;` 처럼 대입하면 힙 데이터는 복사되지 않고 소유권만 s1 에서 s2 로 이동(move)합니다. 그 뒤로 s1 을 쓰면 "borrow of moved value" 컴파일 에러가 납니다. 함수 인자로 넘길 때도 똑같이 이동하며, 함수가 값을 반환하면 그 소유권이 호출한 쪽으로 넘어옵니다.
+
+힙 데이터까지 통째로 복사하고 싶다면 `s1.clone()` 을 호출합니다. 반면 `i32`, `f64`, `bool`, `char` 처럼 크기가 정해진 단순한 타입은 Copy 타입이라, 대입해도 값이 복사되어 원래 변수를 계속 쓸 수 있습니다.
+'''
+example = '''
+fn takes(s: String) {
+    println!("받은 값: {s}");
+} // 여기서 s 가 스코프를 벗어나 drop 된다
+
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1; // 소유권이 s1 에서 s2 로 이동(move)
+    // println!("{s1}"); // 에러: borrow of moved value: `s1`
+    println!("{s2}");
+
+    let s3 = s2.clone(); // 힙 데이터까지 복사하므로 s2 도 계속 사용 가능
+    println!("{s2} {s3}");
+
+    let a = 5;
+    let b = a; // i32 는 Copy 타입이라 값이 복사된다
+    println!("{a} {b}");
+
+    takes(s3); // s3 의 소유권이 함수로 이동
+    // println!("{s3}"); // 에러: s3 은 이미 이동했다
+
+    {
+        let inner = String::from("scope");
+        println!("{inner}");
+    } // inner 가 여기서 drop 된다
+}
+'''
+
+[[quiz]]
+prompt = "a 의 소유권이 b 로 이동했습니다. 컴파일되도록 지금 값을 소유한 변수를 출력하세요"
+code = '''
+fn main() {
+    let a = String::from("move");
+    let b = a;
+    println!("{}", ___);
+}
+'''
+answers = ["b"]
+hint = "let b = a; 이후 a 는 더 이상 사용할 수 없습니다"
+explanation = "String 은 Copy 타입이 아니라서 let b = a; 에서 소유권이 b 로 이동합니다. 이동 후에 a 를 쓰면 borrow of moved value 에러가 납니다."
+
+[[quiz]]
+prompt = "s1 을 계속 쓸 수 있도록 힙 데이터까지 깊은 복사(clone)해서 s2 를 만드세요"
+code = '''
+fn main() {
+    let s1 = String::from("rust");
+    let s2 = s1.___();
+    println!("{s1} {s2}");
+}
+'''
+answers = ["clone"]
+hint = "이 레슨에서 배운 깊은 복사 메서드"
+explanation = "clone 은 힙 데이터까지 새로 복사하므로 s1 과 s2 가 각자 자기 값을 소유합니다. 소유권 이동이 일어나지 않아 s1 도 계속 쓸 수 있습니다."
+
+[[quiz]]
+prompt = "add_world 가 받은 String 의 소유권을 다시 돌려주도록 반환 타입을 쓰세요"
+code = '''
+fn add_world(mut s: String) -> ___ {
+    s.push_str(" world");
+    s
+}
+
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = add_world(s1);
+    println!("{s2}");
+}
+'''
+answers = ["String"]
+hint = "매개변수 s 와 같은 타입을 그대로 돌려줍니다"
+explanation = "s1 은 add_world 로 이동하지만, 함수가 s 를 반환하면서 소유권이 s2 로 넘어옵니다. 매개변수 앞의 mut 는 함수 안에서 s 를 수정하기 위해 붙였습니다."

@@ -1,0 +1,98 @@
+title = "Option: 값이 없을 수도 있을 때"
+summary = "Option<T>, Some/None, match 와 if let, unwrap_or"
+concept = '''
+러스트에는 다른 언어의 null 이 없습니다. 대신 값이 "있을 수도, 없을 수도" 있는 상황을 표준 라이브러리의 enum `Option<T>` 로 표현합니다.
+
+`Option<T>` 는 두 variant 를 가집니다. `<T>` 자리에는 담길 값의 타입이 들어가서, 예를 들어 `Option<i32>` 는 "i32 값 하나가 있거나, 없음"을 뜻합니다.
+- `Some(값)`: 값이 들어 있음
+- `None`: 값이 없음
+
+`Some` 과 `None` 은 워낙 자주 쓰여서 `Option::` 없이 바로 쓸 수 있습니다.
+
+`Option<i32>` 는 `i32` 와 다른 타입이라 바로 더하거나 i32 자리에 넘길 수 없습니다. 안의 값을 쓰려면 먼저 꺼내야 하고, 이 과정에서 "값이 없을 때"를 어떻게 할지 반드시 정하게 됩니다.
+- `match` 로 `Some(v)` 와 `None` 을 모두 처리합니다.
+- `if let Some(v) = 옵션값 { ... }` 은 Some 인 경우만 간단히 처리합니다. 필요하면 `else` 를 붙입니다.
+- `옵션값.unwrap_or(기본값)` 은 Some 이면 안의 값을, None 이면 기본값을 돌려줍니다.
+
+`unwrap()` 도 값을 꺼내지만 None 이면 프로그램이 panic 으로 멈추므로, 값이 반드시 있다고 확신할 때만 씁니다.
+'''
+example = '''
+fn divide(a: i32, b: i32) -> Option<i32> {
+    if b == 0 {
+        None
+    } else {
+        Some(a / b)
+    }
+}
+
+fn main() {
+    match divide(10, 2) {
+        Some(v) => println!("match: {v}"),
+        None => println!("0 으로 나눌 수 없습니다"),
+    }
+
+    if let Some(v) = divide(9, 3) {
+        println!("if let: {v}");
+    }
+
+    let safe = divide(1, 0).unwrap_or(0);
+    println!("unwrap_or: {safe}");
+}
+'''
+
+[[quiz]]
+prompt = "짝수면 절반 값을 담아 돌려주고, 홀수면 값이 없음을 돌려주세요"
+code = '''
+fn half(n: i32) -> Option<i32> {
+    if n % 2 == 0 {
+        ___(n / 2)
+    } else {
+        ___
+    }
+}
+
+fn main() {
+    println!("{:?}", half(10));
+    println!("{:?}", half(7));
+}
+'''
+answers = ["Some", "None"]
+hint = "Option 의 두 variant: 값을 감싸는 쪽과 값이 없는 쪽"
+explanation = "값이 있으면 `Some(값)` 으로 감싸고, 없으면 `None` 을 돌려줍니다. 실행하면 `Some(5)` 와 `None` 이 출력됩니다."
+
+[[quiz]]
+prompt = "name 이 Some 일 때만 값을 꺼내 인사하도록 match 대신 쓰는 간단한 구문을 완성하세요"
+code = '''
+fn main() {
+    let name: Option<&str> = Some("러스트");
+    ___ Some(n) = name {
+        println!("안녕, {n}");
+    } else {
+        println!("이름이 없어요");
+    }
+}
+'''
+answers = ["if let"]
+hint = "조건문 키워드와 변수 선언 키워드, 두 단어입니다"
+explanation = "`if let Some(n) = name` 은 name 이 Some 이면 안의 값을 n 에 담아 블록을 실행하고, None 이면 else 블록을 실행합니다. 한 가지 경우만 관심 있을 때 match 보다 짧게 쓸 수 있습니다."
+
+[[quiz]]
+prompt = "점수가 없을 수도 있는 반환 타입을 쓰고, 점수가 없으면 0 을 쓰도록 하세요"
+code = '''
+fn find_score(name: &str) -> ___<u32> {
+    if name == "철수" {
+        Some(90)
+    } else {
+        None
+    }
+}
+
+fn main() {
+    let a = find_score("철수").___(0);
+    let b = find_score("영희").___(0);
+    println!("철수: {a}, 영희: {b}");
+}
+'''
+answers = ["Option", "unwrap_or", "unwrap_or"]
+hint = "있을 수도 없을 수도 있는 값의 타입, 그리고 None 일 때 쓸 기본값을 받는 메서드"
+explanation = "반환 타입 `Option<u32>` 는 u32 가 있거나 없음을 뜻합니다. `unwrap_or(0)` 은 Some 이면 안의 값을, None 이면 0 을 돌려주므로 `철수: 90, 영희: 0` 이 출력됩니다."

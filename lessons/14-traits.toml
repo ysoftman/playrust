@@ -1,0 +1,156 @@
+title = "트레이트: 공통 동작 정의"
+summary = "trait 정의, impl Trait for Type, 기본 구현, std::fmt::Display 구현"
+concept = '''
+트레이트(trait)는 여러 타입이 공통으로 가져야 할 동작을 메서드 시그니처로 묶어 정의한 것입니다. 다른 언어의 인터페이스와 비슷합니다.
+
+`trait Speak { fn speak(&self) -> String; }` 처럼 본문 없이 시그니처만 적으면, 이 트레이트를 구현하는 타입은 그 메서드를 반드시 직접 작성해야 합니다.
+
+특정 타입에 트레이트를 구현할 때는 `impl Speak for Dog { ... }` 블록 안에 메서드 본문을 씁니다. 서로 다른 타입이 같은 트레이트를 각자의 방식으로 구현할 수 있습니다.
+
+트레이트 안에서 메서드 본문까지 적으면 기본 구현이 됩니다.
+- 구현하는 타입은 기본 구현을 그대로 쓰거나, 같은 이름의 메서드를 다시 작성해 덮어쓸 수 있습니다.
+- 기본 구현 안에서 `self.name()` 처럼 같은 트레이트의 다른 메서드를 호출할 수 있습니다.
+
+예제에 나오는 `format!` 은 `println!` 과 같은 형식으로 문자열을 만들되, 화면에 출력하지 않고 `String` 으로 돌려주는 매크로입니다.
+
+표준 라이브러리에도 많은 트레이트가 있습니다. `std::fmt::Display` 를 구현하면 `println!("{}", 값)` 으로 내가 만든 타입을 출력할 수 있습니다. `fmt` 메서드 안에서 `write!(f, "...")` 매크로로 출력할 내용을 포매터 `f` 에 써 넣고, 그 결과(`fmt::Result`)를 돌려주면 됩니다.
+
+구조체 레슨에서 본 `#[derive(Debug)]` 도, `{:?}` 출력을 위한 `Debug` 트레이트를 컴파일러가 자동으로 구현해 주는 것입니다.
+'''
+example = '''
+use std::fmt;
+
+trait Greet {
+    fn name(&self) -> String;
+
+    fn hello(&self) -> String {
+        format!("안녕하세요, {}입니다", self.name())
+    }
+}
+
+struct Person {
+    name: String,
+}
+
+struct Robot {
+    id: u32,
+}
+
+impl Greet for Person {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+}
+
+impl Greet for Robot {
+    fn name(&self) -> String {
+        format!("로봇 {}", self.id)
+    }
+
+    fn hello(&self) -> String {
+        format!("삐빅. {} 작동 시작", self.name())
+    }
+}
+
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+fn main() {
+    let p = Person { name: String::from("철수") };
+    let r = Robot { id: 7 };
+    println!("{}", p.hello());
+    println!("{}", r.hello());
+
+    let pt = Point { x: 3, y: 4 };
+    println!("점: {pt}");
+}
+'''
+
+[[quiz]]
+prompt = "Dog 타입에 Speak 트레이트를 구현하는 블록을 완성하세요"
+code = '''
+trait Speak {
+    fn speak(&self) -> String;
+}
+
+struct Dog {
+    name: String,
+}
+
+___ Speak ___ Dog {
+    fn speak(&self) -> String {
+        format!("{}: 멍멍!", self.name)
+    }
+}
+
+fn main() {
+    let d = Dog { name: String::from("바둑이") };
+    println!("{}", d.speak());
+}
+'''
+answers = ["impl", "for"]
+hint = "구현(implementation)의 줄임말 키워드, 그리고 '~에 대해' 를 뜻하는 영어 단어"
+explanation = "`impl 트레이트 for 타입 { ... }` 형태로 특정 타입에 트레이트를 구현합니다. 트레이트에 선언된 `speak` 를 빠짐없이 작성해야 컴파일됩니다."
+
+[[quiz]]
+prompt = "Shape 트레이트를 정의하고, 기본 구현 describe 안에서 넓이를 구하는 메서드를 호출하세요"
+code = '''
+___ Shape {
+    fn area(&self) -> f64;
+
+    fn describe(&self) -> String {
+        format!("넓이: {}", self.___())
+    }
+}
+
+struct Square {
+    side: f64,
+}
+
+impl Shape for Square {
+    fn area(&self) -> f64 {
+        self.side * self.side
+    }
+}
+
+fn main() {
+    let s = Square { side: 3.0 };
+    println!("{}", s.describe());
+}
+'''
+answers = ["trait", "area"]
+hint = "트레이트를 선언하는 키워드, 그리고 시그니처만 있고 본문이 없는 메서드 이름"
+explanation = "`describe` 는 본문이 있는 기본 구현이라 Square 는 `area` 만 구현하면 됩니다. 기본 구현이 호출하는 `self.area()` 는 Square 의 구현으로 실행되어 `넓이: 9` 가 출력됩니다."
+
+[[quiz]]
+prompt = "Point 가 {} 로 (1, 2) 형태로 출력되도록 표준 출력 트레이트를 구현하세요 (줄바꿈 없이)"
+code = '''
+use std::fmt;
+
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl fmt::___ for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        ___!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+fn main() {
+    let p = Point { x: 1, y: 2 };
+    println!("{p}");
+}
+'''
+answers = ["Display", "write"]
+hint = "{} 출력을 담당하는 트레이트 이름(대문자로 시작), 그리고 포매터에 내용을 써 넣는 매크로"
+explanation = "`fmt::Display` 를 구현하면 `{}` 로 출력할 수 있습니다. `write!(f, ...)` 는 포매터에 문자열을 쓰고 `fmt::Result` 를 돌려주므로 그대로 반환값이 됩니다. `writeln!` 은 끝에 줄바꿈이 붙습니다."

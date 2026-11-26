@@ -1,0 +1,87 @@
+title = "Result: 실패할 수 있는 작업"
+summary = "Result<T, E>, Ok/Err, parse 로 문자열을 숫자로, ? 연산자"
+concept = '''
+문자열이 숫자가 아니거나 파일이 없는 것처럼, 실패할 수 있는 작업은 `Result<T, E>` 를 돌려줍니다. Option 이 "값이 있음/없음"이라면, Result 는 "성공한 결과 또는 실패한 이유"를 담는 enum 입니다.
+- `Ok(값)`: 성공, T 타입의 결과
+- `Err(에러)`: 실패, E 타입의 에러 정보
+
+대표적인 예가 문자열을 숫자로 바꾸는 `parse` 입니다. `"42".parse::<i32>()` 는 `Ok(42)` 를, `"abc".parse::<i32>()` 는 `Err(...)` 를 돌려줍니다. `::<i32>` 부분은 어떤 타입으로 바꿀지 알려 주며, 이때 에러 타입은 `std::num::ParseIntError` 입니다.
+
+Result 도 enum 이므로 `match` 로 `Ok(v)` 와 `Err(e)` 를 나눠 처리합니다. Option 에서 배운 `if let Ok(v) = ...` 나 `unwrap_or(기본값)` 도 똑같이 쓸 수 있습니다.
+
+`?` 연산자는 에러를 호출한 쪽으로 넘기는(전파) 코드를 짧게 만들어 줍니다. Result 를 돌려주는 함수 안에서 `값?` 이라고 쓰면 Ok 일 땐 안의 값을 꺼내 주고, Err 일 땐 그 에러를 즉시 함수의 반환값으로 돌려주고 함수를 끝냅니다. 그래서 `?` 는 반환 타입이 Result(또는 Option)인 함수 안에서만 쓸 수 있습니다.
+
+`unwrap()` 과 `expect("메시지")` 는 Err 일 때 panic 으로 프로그램을 멈추므로, 실제 프로그램에서는 `match` 나 `?` 로 에러를 다루는 습관을 들이세요.
+'''
+example = '''
+fn double(text: &str) -> Result<i32, std::num::ParseIntError> {
+    let n = text.parse::<i32>()?;
+    Ok(n * 2)
+}
+
+fn main() {
+    match double("21") {
+        Ok(v) => println!("성공: {v}"),
+        Err(e) => println!("실패: {e}"),
+    }
+
+    match double("abc") {
+        Ok(v) => println!("성공: {v}"),
+        Err(e) => println!("실패: {e}"),
+    }
+}
+'''
+
+[[quiz]]
+prompt = "나이가 0 이상이면 성공 값으로, 음수면 실패 값으로 감싸서 돌려주세요"
+code = '''
+fn check_age(age: i32) -> Result<i32, String> {
+    if age >= 0 {
+        ___(age)
+    } else {
+        ___(String::from("나이는 음수일 수 없습니다"))
+    }
+}
+
+fn main() {
+    println!("{:?}", check_age(20));
+    println!("{:?}", check_age(-1));
+}
+'''
+answers = ["Ok", "Err"]
+hint = "Result 의 두 variant: 성공 쪽과 에러 쪽"
+explanation = '성공한 값은 `Ok(...)` 로, 실패 이유는 `Err(...)` 로 감쌉니다. 실행하면 `Ok(20)` 과 `Err("나이는 음수일 수 없습니다")` 가 출력됩니다.'
+
+[[quiz]]
+prompt = "문자열을 i32 로 변환하고, 변환에 실패한 경우를 처리하는 갈래를 쓰세요"
+code = '''
+fn main() {
+    let text = "42";
+    let result = text.parse::<___>();
+    match result {
+        Ok(n) => println!("{n} + 1 = {}", n + 1),
+        ___(e) => println!("변환 실패: {e}"),
+    }
+}
+'''
+answers = ["i32", "Err"]
+hint = "turbofish(::<>) 안에는 바꿀 타입을, 두 번째 갈래에는 실패 variant 를 씁니다"
+explanation = "`parse::<i32>()` 는 문자열을 i32 로 바꾼 `Result<i32, ParseIntError>` 를 돌려줍니다. match 는 완전해야 하므로 `Ok` 와 `Err` 를 모두 처리합니다."
+
+[[quiz]]
+prompt = "두 문자열을 숫자로 바꿔 더하되, 변환 에러는 ? 로 호출한 쪽에 넘기고 성공 값을 돌려주세요"
+code = '''
+fn add(a: &str, b: &str) -> Result<i32, std::num::ParseIntError> {
+    let x = a.parse::<i32>()___;
+    let y = b.parse::<i32>()___;
+    ___(x + y)
+}
+
+fn main() {
+    println!("{:?}", add("10", "20"));
+    println!("{:?}", add("10", "이십"));
+}
+'''
+answers = ["?", "?", "Ok"]
+hint = "에러 전파 연산자는 물음표 한 글자, 마지막 줄은 성공 값을 감싸는 variant"
+explanation = "`?` 는 Ok 면 안의 숫자를 꺼내고, Err 면 그 에러를 바로 함수 밖으로 돌려줍니다. 두 변환이 모두 성공하면 합을 `Ok` 로 감싸 반환하므로 `Ok(30)` 과 `Err(ParseIntError { kind: InvalidDigit })` 가 출력됩니다."

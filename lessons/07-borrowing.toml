@@ -1,0 +1,100 @@
+title = "참조와 빌림"
+summary = "& 불변 참조, &mut 가변 참조, 빌림 규칙, 함수에 참조 전달"
+concept = '''
+값을 함수에 넘길 때마다 소유권이 이동하면 불편합니다. 참조(reference)를 쓰면 소유권은 그대로 둔 채 값을 잠시 빌려줄(borrow) 수 있습니다.
+
+`&s` 는 s 를 가리키는 불변 참조이고, 참조의 타입은 `&String` 처럼 앞에 `&` 를 붙여 씁니다. 불변 참조로는 값을 읽기만 할 수 있습니다. 함수 매개변수를 `s: &String` 으로 선언하고 `f(&s)` 로 호출하면, 함수가 끝난 뒤에도 원래 변수 s 를 계속 쓸 수 있습니다.
+
+값을 수정하려면 가변 참조 `&mut` 가 필요합니다. 변수는 `let mut s` 로 선언하고, 매개변수는 `s: &mut String`, 호출은 `f(&mut s)` 처럼 세 곳 모두에 `mut` 를 씁니다.
+
+빌림에는 두 가지 규칙이 있습니다.
+- 어느 한 시점에는 가변 참조 하나, 또는 불변 참조 여러 개 중 한 쪽만 가질 수 있습니다.
+- 참조는 항상 유효한 값을 가리켜야 합니다.
+
+참조가 살아 있는 범위는 마지막으로 사용된 곳까지입니다. 그래서 불변 참조들을 다 쓴 뒤에는 새로 가변 참조를 만들 수 있습니다. 이 규칙 덕분에 여러 곳에서 같은 값을 동시에 고치는 실수를 컴파일 단계에서 막을 수 있습니다.
+'''
+example = '''
+fn calc_len(s: &String) -> usize {
+    s.len() // usize 는 길이를 나타내는 정수 타입
+}
+
+fn add_bang(s: &mut String) {
+    s.push_str("!");
+}
+
+fn main() {
+    let mut s = String::from("hello");
+
+    let len = calc_len(&s); // 소유권을 넘기지 않고 빌려준다
+    println!("{s} 의 길이: {len}");
+
+    add_bang(&mut s); // 가변 참조로 빌려주면 함수가 수정할 수 있다
+    println!("{s}");
+
+    let r1 = &s;
+    let r2 = &s; // 불변 참조는 여러 개 동시에 가능
+    println!("{r1} {r2}");
+
+    // r1, r2 는 위에서 마지막으로 쓰였으므로 이제 가변 참조를 만들 수 있다
+    let r3 = &mut s;
+    r3.push_str("?");
+    println!("{r3}");
+
+    // let r4 = &s;
+    // let r5 = &mut s;
+    // println!("{r4} {r5}");
+    // 에러: cannot borrow `s` as mutable because it is also borrowed as immutable
+}
+'''
+
+[[quiz]]
+prompt = "소유권을 넘기지 않고 불변 참조로 s 를 빌려주세요"
+code = '''
+fn print_len(s: ___String) {
+    println!("길이: {}", s.len());
+}
+
+fn main() {
+    let s = String::from("borrow");
+    print_len(___s);
+    println!("{s} 는 여전히 사용 가능");
+}
+'''
+answers = ["&", "&"]
+hint = "참조를 만드는 기호 하나"
+explanation = "매개변수 타입을 &String 으로, 인자를 &s 로 쓰면 값을 빌려주기만 하므로 함수 호출 뒤에도 s 를 쓸 수 있습니다."
+
+[[quiz]]
+prompt = "greet 함수가 s 를 수정할 수 있도록 가변 참조로 빌려주세요"
+code = '''
+fn greet(s: &___ String) {
+    s.push_str(", rust");
+}
+
+fn main() {
+    let ___ s = String::from("hello");
+    greet(&___ s);
+    println!("{s}");
+}
+'''
+answers = ["mut", "mut", "mut"]
+hint = "변수 선언, 매개변수 타입, 호출 인자 세 곳에 같은 키워드가 들어갑니다"
+explanation = "가변 참조를 쓰려면 변수 자체가 let mut 로 선언되어 있어야 하고, 타입은 &mut String, 인자는 &mut s 로 넘겨야 합니다."
+
+[[quiz]]
+prompt = "불변 참조 r1, r2 를 다 쓴 뒤, r3 으로 s 를 수정할 수 있게 참조를 만드세요"
+code = '''
+fn main() {
+    let mut s = String::from("hi");
+    let r1 = &s;
+    let r2 = &s;
+    println!("{r1} {r2}");
+
+    let r3 = ___ s;
+    r3.push_str("!");
+    println!("{r3}");
+}
+'''
+answers = ["&mut"]
+hint = "값을 수정할 수 있게 빌려주는 가변 참조"
+explanation = "r1, r2 는 println! 에서 마지막으로 쓰였으므로 그 뒤에는 가변 참조를 만들 수 있습니다. 만약 r3 을 만든 뒤에 r1 을 다시 쓰면 빌림 규칙 위반으로 컴파일 에러가 납니다."

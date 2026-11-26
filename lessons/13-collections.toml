@@ -1,0 +1,99 @@
+title = "컬렉션: Vec 과 HashMap"
+summary = "vec!, push, 인덱스와 get, for 순회, HashMap 의 insert, get, entry().or_insert"
+concept = '''
+`Vec<T>` (벡터)는 같은 타입의 값 여러 개를 순서대로 담는, 크기가 늘어나는 목록입니다. `vec![1, 2, 3]` 매크로로 값을 넣어 만들거나 `Vec::new()` 로 빈 벡터를 만듭니다.
+
+`push(값)` 은 벡터 끝에 값을 추가합니다. 벡터를 바꾸는 동작이므로 변수를 `let mut` 으로 선언해야 합니다. `len()` 으로 원소 개수를 알 수 있습니다.
+
+원소를 읽는 방법은 두 가지입니다.
+- `v[0]` 처럼 인덱스로 읽기: 범위를 벗어나면 프로그램이 panic 으로 멈춥니다.
+- `v.get(0)` 으로 읽기: `Option<&T>` 를 돌려주므로 범위 밖이면 `None` 이 되어 안전합니다.
+
+`for x in &v` 처럼 참조로 순회하면 벡터의 소유권을 넘기지 않고 원소를 하나씩 읽을 수 있습니다.
+
+`HashMap<K, V>` 는 키(key)로 값(value)을 찾는 자료구조입니다. `use std::collections::HashMap;` 으로 가져와 씁니다.
+- `insert(키, 값)` 으로 넣고, `get(키)` 로 찾으면 `Option<&V>` 를 돌려줍니다. `map[키]` 로도 읽을 수 있지만 키가 없으면 panic 합니다.
+- `entry(키).or_insert(기본값)` 은 키가 없을 때만 기본값을 넣고, 그 값의 가변 참조를 돌려줍니다. `*` 로 역참조해 `+= 1` 하면 개수 세기에 편리합니다.
+
+HashMap 은 순서를 보장하지 않으므로, 전체를 순회하면 출력 순서가 실행마다 달라질 수 있습니다.
+'''
+example = '''
+use std::collections::HashMap;
+
+fn main() {
+    let mut nums = vec![10, 20, 30];
+    nums.push(40);
+    println!("첫 번째: {}, 길이: {}", nums[0], nums.len());
+
+    match nums.get(9) {
+        Some(n) => println!("9번 인덱스: {n}"),
+        None => println!("9번 인덱스는 없습니다"),
+    }
+
+    for n in &nums {
+        println!("값: {n}");
+    }
+
+    let mut ages = HashMap::new();
+    ages.insert("철수", 20);
+    ages.insert("영희", 22);
+    if let Some(age) = ages.get("영희") {
+        println!("영희의 나이: {age}");
+    }
+
+    let words = vec!["사과", "배", "사과"];
+    let mut counts = HashMap::new();
+    for w in words {
+        let count = counts.entry(w).or_insert(0);
+        *count += 1;
+    }
+    println!("사과: {}, 배: {}", counts["사과"], counts["배"]);
+}
+'''
+
+[[quiz]]
+prompt = 'fruits 를 변경 가능하게 선언하고, 끝에 "포도" 를 추가하세요'
+code = '''
+fn main() {
+    let ___ fruits = vec!["사과", "배"];
+    fruits.___("포도");
+    println!("{:?}, 개수: {}", fruits, fruits.len());
+}
+'''
+answers = ["mut", "push"]
+hint = "가변(mutable)을 뜻하는 키워드, 그리고 벡터 끝에 값을 밀어 넣는 메서드"
+explanation = '`push` 는 벡터를 바꾸므로 변수가 `let mut` 이어야 합니다. 실행하면 `["사과", "배", "포도"], 개수: 3` 이 출력됩니다.'
+
+[[quiz]]
+prompt = "범위를 벗어난 인덱스 5 를 panic 없이 안전하게 읽으세요"
+code = '''
+fn main() {
+    let v = vec![1, 2, 3];
+    match v.___(5) {
+        ___(n) => println!("값: {n}"),
+        None => println!("인덱스 5 에는 값이 없습니다"),
+    }
+}
+'''
+answers = ["get", "Some"]
+hint = "Option 을 돌려주는 읽기 메서드, 그리고 값이 있을 때의 Option variant"
+explanation = "`v[5]` 는 panic 하지만 `v.get(5)` 는 `Option<&i32>` 를 돌려주므로 범위 밖이면 `None` 이 됩니다. 원소가 3개뿐이라 None 쪽이 실행됩니다."
+
+[[quiz]]
+prompt = "단어마다 처음 나오면 0 을 넣고, 나올 때마다 1 씩 더해 개수를 세세요"
+code = '''
+use std::collections::HashMap;
+
+fn main() {
+    let words = vec!["사과", "배", "사과", "사과"];
+    let mut counts = HashMap::new();
+    for w in words {
+        let count = counts.___(w).___(0);
+        *count += 1;
+    }
+    println!("사과: {}, 배: {}", counts["사과"], counts["배"]);
+}
+'''
+answers = ["entry", "or_insert"]
+hint = "키의 자리를 가져오는 메서드, 그리고 비어 있으면 기본값을 넣는 메서드"
+explanation = "`entry(w).or_insert(0)` 은 키가 없으면 0 을 넣고, 있든 없든 그 값의 가변 참조를 돌려줍니다. `*count += 1` 로 역참조해 값을 늘리므로 `사과: 3, 배: 1` 이 출력됩니다."

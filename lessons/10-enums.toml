@@ -1,0 +1,115 @@
+title = "열거형과 match"
+summary = "enum, 데이터를 담는 variant, match 의 완전성, _ 와일드카드"
+concept = '''
+열거형(enum)은 "정해진 여러 경우 중 정확히 하나"인 값을 표현하는 타입입니다. 가능한 각 경우를 variant 라고 부르며, `Direction::Up` 처럼 `타입::variant` 형태로 값을 만듭니다.
+
+variant 는 저마다 다른 데이터를 담을 수 있습니다.
+- `Quit` 처럼 데이터가 없는 variant
+- `Write(String)` 처럼 괄호 안에 값을 담는 variant
+- `Move { x: i32, y: i32 }` 처럼 구조체처럼 이름 붙은 필드를 담는 variant
+
+enum 값은 주로 `match` 로 다룹니다. 각 갈래(arm)는 `패턴 => 실행할 코드` 형태이고, 위에서부터 차례로 패턴과 비교해 처음 맞는 갈래 하나만 실행합니다. 패턴 안에 변수 이름을 쓰면 `Message::Write(text)` 처럼 variant 가 담은 데이터를 꺼내 쓸 수 있습니다. `match` 는 표현식이라 갈래의 결과를 값으로 돌려줄 수도 있습니다.
+
+`match` 는 완전해야(exhaustive) 합니다. 가능한 경우를 하나라도 빠뜨리면 컴파일 에러가 나므로, 나중에 variant 를 추가해도 처리를 빠뜨릴 걱정이 없습니다. 하나하나 나열하지 않을 나머지 경우는 와일드카드 `_` 갈래 하나로 한꺼번에 처리합니다.
+
+구조체처럼 enum 에도 `impl` 블록으로 메서드를 붙일 수 있습니다.
+'''
+example = '''
+enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+}
+
+fn handle(msg: &Message) {
+    match msg {
+        Message::Quit => println!("종료"),
+        Message::Move { x, y } => println!("({x}, {y}) 로 이동"),
+        Message::Write(text) => println!("메시지: {text}"),
+    }
+}
+
+fn main() {
+    let a = Message::Move { x: 3, y: 5 };
+    let b = Message::Write(String::from("안녕"));
+    let c = Message::Quit;
+    handle(&a);
+    handle(&b);
+    handle(&c);
+}
+'''
+
+[[quiz]]
+prompt = "Up, Down 두 경우를 가진 열거형을 정의하고, 값에 따라 분기하는 키워드를 쓰세요"
+code = '''
+___ Direction {
+    Up,
+    Down,
+}
+
+fn show(d: Direction) {
+    ___ d {
+        Direction::Up => println!("위로 이동"),
+        Direction::Down => println!("아래로 이동"),
+    }
+}
+
+fn main() {
+    show(Direction::Up);
+    show(Direction::Down);
+}
+'''
+answers = ["enum", "match"]
+hint = "열거형(enumeration)의 줄임말, 그리고 '짝을 맞추다'라는 뜻의 분기 키워드"
+explanation = "`enum` 으로 가능한 경우를 나열하고, `match` 로 값이 어느 variant 인지에 따라 다른 코드를 실행합니다."
+
+[[quiz]]
+prompt = "show 에서 문자열을 담은 variant 의 데이터를 꺼내고, main 에서 데이터가 없는 variant 값을 만드세요"
+code = '''
+enum Message {
+    Quit,
+    Write(String),
+}
+
+fn show(msg: Message) {
+    match msg {
+        Message::Quit => println!("종료"),
+        Message::___(text) => println!("메시지: {text}"),
+    }
+}
+
+fn main() {
+    show(Message::Write(String::from("안녕")));
+    show(Message::___);
+}
+'''
+answers = ["Write", "Quit"]
+hint = "enum 정의에 있는 variant 이름 두 개를 각각 알맞은 자리에 쓰세요"
+explanation = "`Message::Write(text)` 패턴은 Write 가 담은 String 을 text 라는 변수로 꺼냅니다. 데이터가 없는 variant 는 `Message::Quit` 처럼 괄호 없이 이름만으로 값을 만듭니다."
+
+[[quiz]]
+prompt = "빨간불이 아닌 나머지 모든 경우를 한 갈래로 처리하는 패턴을 쓰세요"
+code = '''
+enum Light {
+    Red,
+    Yellow,
+    Green,
+}
+
+fn seconds(light: &Light) -> u32 {
+    match light {
+        Light::Red => 30,
+        ___ => 10,
+    }
+}
+
+fn main() {
+    let lights = [Light::Red, Light::Yellow, Light::Green];
+    for light in &lights {
+        println!("{}초", seconds(light));
+    }
+}
+'''
+answers = ["_"]
+hint = "어떤 값과도 맞는 와일드카드, 밑줄 한 개입니다"
+explanation = "`match` 는 모든 경우를 다뤄야 하므로 Yellow 와 Green 도 처리해야 합니다. `_` 는 어떤 값과도 맞는 와일드카드라 남은 경우를 한 번에 처리합니다."
